@@ -1,0 +1,14 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/Serilog.Sinks.AzureEventHub/Serilog.Sinks.AzureEventHub.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Serilog.Sinks.AzureEventHub.IntegrationTests/Serilog.Sinks.AzureEventHub.IntegrationTests.csproj" />
+    <Project Path="test/Serilog.Sinks.AzureEventHub.Tests/Serilog.Sinks.AzureEventHub.Tests.csproj" />
+  </Folder>
+</Solution>

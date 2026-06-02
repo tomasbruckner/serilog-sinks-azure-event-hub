@@ -107,15 +107,19 @@ namespace Serilog
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
 
-            var sink = writeInBatches ?
-                (ILogEventSink)new AzureEventHubBatchingSink(
-                    eventHubClient,
-                    formatter,
-                    batchPostingLimit ?? DefaultBatchPostingLimit,
-                    period ?? DefaultPeriod) :
-                new AzureEventHubSink(eventHubClient, formatter);
+            if (writeInBatches)
+            {
+                var batchedSink = new AzureEventHubBatchingSink(eventHubClient, formatter);
+                var batchingOptions = new BatchingOptions
+                {
+                    BatchSizeLimit = batchPostingLimit ?? DefaultBatchPostingLimit,
+                    BufferingTimeLimit = period ?? DefaultPeriod
+                };
 
-            return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
+                return loggerConfiguration.Sink(batchedSink, batchingOptions, restrictedToMinimumLevel);
+            }
+
+            return loggerConfiguration.Sink(new AzureEventHubSink(eventHubClient, formatter), restrictedToMinimumLevel);
         }
 
         /// <summary>

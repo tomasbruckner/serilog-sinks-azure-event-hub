@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ master, dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      - name: Test
+        run: dotnet test -c Release --no-build --verbosity normal
+
+  publish:
+    # Build + test must pass first; never publish from pull requests.
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required for creating the GitHub release on master
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Read package version
+        id: version
+        run: echo "value=$(grep -oP '(?<=<VersionPrefix>)[^<]+' src/Serilog.Sinks.AzureEventHub/Serilog.Sinks.AzureEventHub.csproj)" >> "$GITHUB_OUTPUT"
+
+      - name: Pack (stable on master, prerelease on dev)
+        run: |
+          if [ "${{ github.ref_name }}" = "master" ]; then
+            dotnet pack src/Serilog.Sinks.AzureEventHub/Serilog.Sinks.AzureEventHub.csproj -c Release -o artifacts
+          else
+            dotnet pack src/Serilog.Sinks.AzureEventHub/Serilog.Sinks.AzureEventHub.csproj -c Release -o artifacts --version-suffix "dev.${{ github.run_number }}"
+          fi
+
+      - name: Push to NuGet
+        run: >
+          dotnet nuget push "artifacts/*.nupkg"
+          --api-key "${{ secrets.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Create GitHub release
+        if: github.ref_name == 'master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "v${{ steps.version.outputs.value }}" artifacts/*.nupkg
+          --title "v${{ steps.version.outputs.value }}"
+          --generate-notes
