@@ -184,3 +184,6 @@ FakesAssemblies/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
+
+# Claude Code local config and skills
+.claude/
