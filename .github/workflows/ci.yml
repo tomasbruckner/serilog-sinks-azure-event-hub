@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ master, dev ]
+    branches: [ main, dev ]
 
 jobs:
   build:
@@ -26,12 +26,12 @@ jobs:
         run: dotnet test -c Release --no-build --verbosity normal
 
   publish:
-    # Build + test must pass first; never publish from pull requests.
+    # Publish only from main, and only after build + test pass (never from PRs or dev).
     needs: build
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # required for creating the GitHub release on master
+      contents: write   # required for creating the GitHub release
     steps:
       - uses: actions/checkout@v4
 
@@ -43,13 +43,8 @@ jobs:
         id: version
         run: echo "value=$(grep -oP '(?<=<VersionPrefix>)[^<]+' src/Serilog.Sinks.AzureEventHub/Serilog.Sinks.AzureEventHub.csproj)" >> "$GITHUB_OUTPUT"
 
-      - name: Pack (stable on master, prerelease on dev)
-        run: |
-          if [ "${{ github.ref_name }}" = "master" ]; then
-            dotnet pack src/Serilog.Sinks.AzureEventHub/Serilog.Sinks.AzureEventHub.csproj -c Release -o artifacts
-          else
-            dotnet pack src/Serilog.Sinks.AzureEventHub/Serilog.Sinks.AzureEventHub.csproj -c Release -o artifacts --version-suffix "dev.${{ github.run_number }}"
-          fi
+      - name: Pack
+        run: dotnet pack src/Serilog.Sinks.AzureEventHub/Serilog.Sinks.AzureEventHub.csproj -c Release -o artifacts
 
       - name: Push to NuGet
         run: >
@@ -59,7 +54,6 @@ jobs:
           --skip-duplicate
 
       - name: Create GitHub release
-        if: github.ref_name == 'master'
         env:
           GH_TOKEN: ${{ github.token }}
         run: >

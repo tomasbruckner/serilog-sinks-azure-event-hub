@@ -45,5 +45,5 @@ Built on the modern **`Azure.Messaging.EventHubs`** SDK (`EventHubProducerClient
 ## Versioning / release
 
 - Package version comes from `<VersionPrefix>` in the library `.csproj`. (The standalone `.nuspec` is legacy — `dotnet pack` builds from the csproj metadata, not that file — but keep its dependency list in sync to avoid confusion.)
-- CI is **GitHub Actions** (`.github/workflows/ci.yml`, .NET SDK `10.0.x`): builds and runs tests on every push/PR to `master`/`dev` (the runner's Docker engine backs the integration tests); on push it packs and pushes to NuGet (stable on `master`, `-dev.<run>` prerelease on `dev`) and cuts a GitHub release on `master`. Requires the `NUGET_API_KEY` repo secret. The default working branch is `dev`.
+- CI is **GitHub Actions** (`.github/workflows/ci.yml`, .NET SDK `10.0.x`): builds and runs tests on every push/PR to `main`/`dev` (the runner's Docker engine backs the integration tests). **Publishing happens only on push to `main`** — it packs, pushes to NuGet, and cuts a GitHub release. Requires the `NUGET_API_KEY` repo secret. The default working branch is `dev`.
 - `Build.ps1` is the old AppVeyor pack script, left in place for local packaging; it is no longer wired to CI.
