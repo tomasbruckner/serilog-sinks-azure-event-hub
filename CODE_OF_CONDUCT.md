@@ -20,9 +20,9 @@ community welcoming.
 ## Enforcement
 
 Concerns about behavior in the project's spaces may be reported to the
-maintainers at **infra@dawiso.com**. All reports will be reviewed and
-investigated promptly and fairly. Maintainers are obligated to respect the
-privacy and security of anyone who reports an incident.
+maintainer, [@tomasbruckner](https://github.com/tomasbruckner). All reports will
+be reviewed and investigated promptly and fairly. Maintainers are obligated to
+respect the privacy and security of anyone who reports an incident.
 
 ## Attribution
 
