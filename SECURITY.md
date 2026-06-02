@@ -12,11 +12,9 @@
 Please **do not** report security vulnerabilities through public GitHub issues,
 discussions, or pull requests.
 
-Instead, report them privately by either:
-
-- Using GitHub's [private vulnerability reporting](https://docs.github.com/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability)
-  ("Report a vulnerability" on the repository's **Security** tab), or
-- Emailing **infra@dawiso.com**.
+Instead, please report them privately using GitHub's
+[private vulnerability reporting](https://docs.github.com/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability)
+— click **"Report a vulnerability"** on the repository's **Security** tab.
 
 Please include:
 
