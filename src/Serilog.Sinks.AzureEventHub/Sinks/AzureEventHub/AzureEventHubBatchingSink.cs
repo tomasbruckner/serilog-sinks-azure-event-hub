@@ -28,11 +28,12 @@ namespace Serilog.Sinks.AzureEventHub
     /// Writes log events to an Azure Event Hub in batches. Batching is driven by
     /// Serilog's built-in periodic batching infrastructure via <see cref="IBatchedLogEventSink"/>.
     /// </summary>
-    public class AzureEventHubBatchingSink : IBatchedLogEventSink
+    public class AzureEventHubBatchingSink : IBatchedLogEventSink, IDisposable
     {
         readonly EventHubProducerClient _eventHubClient;
         readonly ITextFormatter _formatter;
         readonly bool _shouldIncludeProperties;
+        readonly bool _ownsClient;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
@@ -44,10 +45,22 @@ namespace Serilog.Sinks.AzureEventHub
             EventHubProducerClient eventHubClient,
             ITextFormatter formatter,
             bool shouldIncludeProperties = false)
+            : this(eventHubClient, formatter, shouldIncludeProperties, ownsClient: false)
+        {
+        }
+
+        // ownsClient is true only when the library created the client (the connectionString
+        // overloads); a caller-supplied client is left for the caller to dispose.
+        internal AzureEventHubBatchingSink(
+            EventHubProducerClient eventHubClient,
+            ITextFormatter formatter,
+            bool shouldIncludeProperties,
+            bool ownsClient)
         {
             _eventHubClient = eventHubClient;
             _formatter = formatter;
             _shouldIncludeProperties = shouldIncludeProperties;
+            _ownsClient = ownsClient;
         }
 
         /// <summary>
@@ -58,7 +71,11 @@ namespace Serilog.Sinks.AzureEventHub
         /// All events in the batch share a single random partition key so they are kept
         /// together on the same Event Hub partition. Events are accumulated into
         /// size-constrained <see cref="EventDataBatch"/> instances; if the events do not
-        /// fit into a single request they are split across several sends.
+        /// fit into a single request they are split across several sends. When a batch is
+        /// split, delivery is at-least-once: if a later send fails after an earlier one
+        /// succeeded, the batching infrastructure retries the whole batch, so the already
+        /// delivered events may be sent again. Consumers that require exactly-once should
+        /// de-duplicate downstream.
         /// </remarks>
         public async Task EmitBatchAsync(IReadOnlyCollection<LogEvent> batch)
         {
@@ -69,7 +86,7 @@ namespace Serilog.Sinks.AzureEventHub
             {
                 foreach (var logEvent in batch)
                 {
-                    var eventData = CreateEventData(logEvent);
+                    var eventData = EventDataFactory.CreateEventData(logEvent, _formatter, _shouldIncludeProperties);
 
                     if (eventBatch.TryAdd(eventData))
                         continue;
@@ -87,7 +104,10 @@ namespace Serilog.Sinks.AzureEventHub
                     {
                         // A single event too large for an empty batch is dropped rather than
                         // stalling the whole batch; report it through Serilog's self-log.
-                        SelfLog.WriteLine("Azure Event Hub sink discarded a log event that exceeds the maximum batch size.");
+                        SelfLog.WriteLine(
+                            "Azure Event Hub sink discarded a '{0}' log event at {1:o} that exceeds the maximum batch size.",
+                            logEvent.Level,
+                            logEvent.Timestamp);
                     }
                 }
 
@@ -105,7 +125,14 @@ namespace Serilog.Sinks.AzureEventHub
         /// </summary>
         public Task OnEmptyBatchAsync() => Task.CompletedTask;
 
-        EventData CreateEventData(LogEvent logEvent) =>
-            EventDataFactory.CreateEventData(logEvent, _formatter, _shouldIncludeProperties);
+        /// <summary>
+        /// Disposes the underlying Event Hub client, but only when this sink created it
+        /// (i.e. it was configured from a connection string rather than a caller-supplied client).
+        /// </summary>
+        public void Dispose()
+        {
+            if (_ownsClient)
+                _eventHubClient.DisposeAsync().GetAwaiter().GetResult();
+        }
     }
 }

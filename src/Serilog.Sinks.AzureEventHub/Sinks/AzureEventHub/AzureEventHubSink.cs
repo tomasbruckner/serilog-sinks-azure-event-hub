@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Serilog.Core;
@@ -25,11 +24,12 @@ namespace Serilog.Sinks.AzureEventHub
     /// <summary>
     /// Writes log events to an Azure Event Hub.
     /// </summary>
-    public class AzureEventHubSink : ILogEventSink
+    public class AzureEventHubSink : ILogEventSink, IDisposable
     {
         readonly EventHubProducerClient _eventHubClient;
         readonly ITextFormatter _formatter;
         readonly bool _shouldIncludeProperties;
+        readonly bool _ownsClient;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
@@ -41,10 +41,22 @@ namespace Serilog.Sinks.AzureEventHub
             EventHubProducerClient eventHubClient,
             ITextFormatter formatter,
             bool shouldIncludeProperties = false)
+            : this(eventHubClient, formatter, shouldIncludeProperties, ownsClient: false)
+        {
+        }
+
+        // ownsClient is true only when the library created the client (the connectionString
+        // overloads); a caller-supplied client is left for the caller to dispose.
+        internal AzureEventHubSink(
+            EventHubProducerClient eventHubClient,
+            ITextFormatter formatter,
+            bool shouldIncludeProperties,
+            bool ownsClient)
         {
             _eventHubClient = eventHubClient;
             _formatter = formatter;
             _shouldIncludeProperties = shouldIncludeProperties;
+            _ownsClient = ownsClient;
         }
 
         /// <summary>
@@ -57,7 +69,17 @@ namespace Serilog.Sinks.AzureEventHub
 
             //Unfortunately no support for async in Serilog yet
             //https://github.com/serilog/serilog/issues/134
-            _eventHubClient.SendAsync(new List<EventData>() { eventHubData } , new SendEventOptions() { PartitionKey = Guid.NewGuid().ToString() }).GetAwaiter().GetResult();
+            _eventHubClient.SendAsync(new[] { eventHubData }, new SendEventOptions { PartitionKey = Guid.NewGuid().ToString() }).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disposes the underlying Event Hub client, but only when this sink created it
+        /// (i.e. it was configured from a connection string rather than a caller-supplied client).
+        /// </summary>
+        public void Dispose()
+        {
+            if (_ownsClient)
+                _eventHubClient.DisposeAsync().GetAwaiter().GetResult();
         }
     }
 }

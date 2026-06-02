@@ -62,6 +62,8 @@ Log.Logger = new LoggerConfiguration()
 
 > `DefaultAzureCredential` comes from the [`Azure.Identity`](https://www.nuget.org/packages/Azure.Identity) package.
 
+**Client ownership:** when you pass your own `EventHubProducerClient`, the sink never disposes it — its lifetime is yours to manage. When you instead configure the sink with a connection string, the library creates the client internally and disposes it for you when the logger is disposed (`Log.CloseAndFlush()` or `using`).
+
 ## Batching
 
 By default the sink sends each event individually and synchronously. For higher throughput, enable batching with `writeInBatches: true`; events are then buffered and flushed periodically:
@@ -102,7 +104,7 @@ Log.Information("Order {OrderId} shipped to {Region}", 1234, "EU");
 // EventData.Properties -> Type=SerilogEvent, Level=Information, OrderId=1234, Region=EU
 ```
 
-Scalar values are passed through with their original type where Event Hubs supports it; structured/collection values are rendered to a string. The reserved `Type` and `Level` properties are never overwritten by a same-named log event property. The option is available on both `WriteTo` and `AuditTo`.
+Scalar values are passed through with their original type where Event Hubs supports it; everything else — scalar types Event Hubs can't serialize (such as enums) as well as structured/collection values — is rendered to an invariant-culture string, so a property value never causes the send to fail. The reserved `Type` and `Level` properties are never overwritten by a same-named log event property. The option is available on both `WriteTo` and `AuditTo`.
 
 ## Custom formatting
 

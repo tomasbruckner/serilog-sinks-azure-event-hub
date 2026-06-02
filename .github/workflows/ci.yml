@@ -56,7 +56,10 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+        # Skip if the release already exists, so re-running publish after a partial
+        # failure (or a push that didn't bump the version) does not fail the job.
         run: >
-          gh release create "v${{ steps.version.outputs.value }}" artifacts/*.nupkg
+          gh release view "v${{ steps.version.outputs.value }}" >/dev/null 2>&1
+          || gh release create "v${{ steps.version.outputs.value }}" artifacts/*.nupkg
           --title "v${{ steps.version.outputs.value }}"
           --generate-notes

@@ -83,6 +83,40 @@ namespace Serilog.Sinks.AzureEventHub.Tests
         }
 
         [Fact]
+        public void Emit_WithShouldIncludeProperties_RendersUnsupportedScalarTypeAsString()
+        {
+            var client = CaptureClient(out var captured);
+            var sink = new AzureEventHubSink(client, TestLogEvents.Formatter, shouldIncludeProperties: true);
+
+            sink.Emit(TestLogEvents.Create(LogEventLevel.Information, "hi", TestLogEvents.Property("Status", Status.Active)));
+
+            var eventData = Assert.Single(captured);
+            // Enums (and other types Event Hubs can't serialize as AMQP properties) are rendered
+            // to a string so SendAsync never throws a SerializationException.
+            Assert.Equal("Active", eventData.Properties["Status"]);
+            Assert.IsType<string>(eventData.Properties["Status"]);
+        }
+
+        [Fact]
+        public void Emit_WithShouldIncludeProperties_PassesSupportedScalarTypesThrough()
+        {
+            var client = CaptureClient(out var captured);
+            var sink = new AzureEventHubSink(client, TestLogEvents.Formatter, shouldIncludeProperties: true);
+
+            sink.Emit(TestLogEvents.Create(LogEventLevel.Information, "hi", TestLogEvents.Property("UserId", 42)));
+
+            var eventData = Assert.Single(captured);
+            // int is natively supported, so it must keep its CLR type rather than become a string.
+            Assert.Equal(42, eventData.Properties["UserId"]);
+            Assert.IsType<int>(eventData.Properties["UserId"]);
+        }
+
+        enum Status
+        {
+            Active
+        }
+
+        [Fact]
         public void Emit_ByDefault_DoesNotIncludeLogEventProperties()
         {
             var client = CaptureClient(out var captured);

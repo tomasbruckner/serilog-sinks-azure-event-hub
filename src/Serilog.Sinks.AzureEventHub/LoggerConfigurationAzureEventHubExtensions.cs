@@ -1,11 +1,11 @@
-﻿// Copyright 2014 Serilog Contributors
-// 
+// Copyright 2014 Serilog Contributors
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,18 +19,17 @@ using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
-using Serilog.Formatting.Display;
 using Serilog.Sinks.AzureEventHub;
 
 namespace Serilog
 {
     /// <summary>
-    /// Adds the WriteTo.AzureEventHub() extension metho to <see cref="LoggerConfiguration"/>.
+    /// Adds the WriteTo.AzureEventHub() extension methods to <see cref="LoggerConfiguration"/>.
     /// </summary>
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     public static class LoggerConfigurationAzureEventHubExtensions
     {
-        const string DefaultOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}";
+        const string DefaultOutputTemplate = EventHubSinkConfigurationHelper.DefaultOutputTemplate;
 
         /// <summary>
         /// A reasonable default for the number of events posted in each batch.
@@ -70,14 +69,11 @@ namespace Serilog
             bool shouldIncludeProperties = false
             )
         {
-            if (loggerConfiguration == null)
-                throw new ArgumentNullException("loggerConfiguration");
-            if (eventHubClient == null)
-                throw new ArgumentNullException("eventHubClient");
-            if (outputTemplate == null)
-                throw new ArgumentNullException("outputTemplate");
+            EventHubSinkConfigurationHelper.EnsureNotNull(loggerConfiguration, nameof(loggerConfiguration));
+            EventHubSinkConfigurationHelper.EnsureNotNull(eventHubClient, nameof(eventHubClient));
+            EventHubSinkConfigurationHelper.EnsureNotNull(outputTemplate, nameof(outputTemplate));
 
-            var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
+            var formatter = EventHubSinkConfigurationHelper.CreateFormatter(outputTemplate, formatProvider);
 
             return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit, shouldIncludeProperties);
         }
@@ -106,24 +102,11 @@ namespace Serilog
             int? batchPostingLimit = null,
             bool shouldIncludeProperties = false)
         {
-            if (loggerConfiguration == null)
-                throw new ArgumentNullException("loggerConfiguration");
-            if (eventHubClient == null)
-                throw new ArgumentNullException("eventHubClient");
+            EventHubSinkConfigurationHelper.EnsureNotNull(loggerConfiguration, nameof(loggerConfiguration));
+            EventHubSinkConfigurationHelper.EnsureNotNull(formatter, nameof(formatter));
+            EventHubSinkConfigurationHelper.EnsureNotNull(eventHubClient, nameof(eventHubClient));
 
-            if (writeInBatches)
-            {
-                var batchedSink = new AzureEventHubBatchingSink(eventHubClient, formatter, shouldIncludeProperties);
-                var batchingOptions = new BatchingOptions
-                {
-                    BatchSizeLimit = batchPostingLimit ?? DefaultBatchPostingLimit,
-                    BufferingTimeLimit = period ?? DefaultPeriod
-                };
-
-                return loggerConfiguration.Sink(batchedSink, batchingOptions, restrictedToMinimumLevel);
-            }
-
-            return loggerConfiguration.Sink(new AzureEventHubSink(eventHubClient, formatter, shouldIncludeProperties), restrictedToMinimumLevel);
+            return ConfigureSink(loggerConfiguration, formatter, eventHubClient, ownsClient: false, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit, shouldIncludeProperties);
         }
 
         /// <summary>
@@ -132,7 +115,7 @@ namespace Serilog
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="connectionString">The Event Hub connection string.</param>
         /// <param name="eventHubName">The Event Hub name.</param>
-        /// /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="outputTemplate">A message template describing the format used to write to the sink.
         /// the default is "{Timestamp} [{Level}] {Message}{NewLine}{Exception}".</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
@@ -143,6 +126,7 @@ namespace Serilog
         /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
+        /// <exception cref="ArgumentException"><paramref name="connectionString"/> or <paramref name="eventHubName"/> is empty or whitespace.</exception>
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
             string connectionString,
@@ -156,16 +140,15 @@ namespace Serilog
             bool shouldIncludeProperties = false
             )
         {
-            if (loggerConfiguration == null)
-                throw new ArgumentNullException("loggerConfiguration");
-            if (string.IsNullOrWhiteSpace(connectionString))
-                throw new ArgumentNullException("connectionString");
-            if (string.IsNullOrWhiteSpace(eventHubName))
-                throw new ArgumentNullException("eventHubName");
+            EventHubSinkConfigurationHelper.EnsureNotNull(loggerConfiguration, nameof(loggerConfiguration));
+            EventHubSinkConfigurationHelper.EnsureNotNullOrWhiteSpace(connectionString, nameof(connectionString));
+            EventHubSinkConfigurationHelper.EnsureNotNullOrWhiteSpace(eventHubName, nameof(eventHubName));
+            EventHubSinkConfigurationHelper.EnsureNotNull(outputTemplate, nameof(outputTemplate));
 
-            var client = new EventHubProducerClient(connectionString, eventHubName);
+            var formatter = EventHubSinkConfigurationHelper.CreateFormatter(outputTemplate, formatProvider);
+            var client = EventHubSinkConfigurationHelper.CreateClient(connectionString, eventHubName);
 
-            return AzureEventHub(loggerConfiguration, client, outputTemplate, formatProvider, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit, shouldIncludeProperties);
+            return ConfigureSink(loggerConfiguration, formatter, client, ownsClient: true, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit, shouldIncludeProperties);
         }
 
         /// <summary>
@@ -183,6 +166,7 @@ namespace Serilog
         /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
+        /// <exception cref="ArgumentException"><paramref name="connectionString"/> or <paramref name="eventHubName"/> is empty or whitespace.</exception>
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
@@ -195,16 +179,44 @@ namespace Serilog
             bool shouldIncludeProperties = false
         )
         {
-            if (loggerConfiguration == null)
-                throw new ArgumentNullException("loggerConfiguration");
-            if (string.IsNullOrWhiteSpace(connectionString))
-                throw new ArgumentNullException("connectionString");
-            if (string.IsNullOrWhiteSpace(eventHubName))
-                throw new ArgumentNullException("eventHubName");
+            EventHubSinkConfigurationHelper.EnsureNotNull(loggerConfiguration, nameof(loggerConfiguration));
+            EventHubSinkConfigurationHelper.EnsureNotNull(formatter, nameof(formatter));
+            EventHubSinkConfigurationHelper.EnsureNotNullOrWhiteSpace(connectionString, nameof(connectionString));
+            EventHubSinkConfigurationHelper.EnsureNotNullOrWhiteSpace(eventHubName, nameof(eventHubName));
 
-            var client = new EventHubProducerClient(connectionString, eventHubName);
+            var client = EventHubSinkConfigurationHelper.CreateClient(connectionString, eventHubName);
 
-            return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit, shouldIncludeProperties);
+            return ConfigureSink(loggerConfiguration, formatter, client, ownsClient: true, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit, shouldIncludeProperties);
+        }
+
+        static LoggerConfiguration ConfigureSink(
+            LoggerSinkConfiguration loggerConfiguration,
+            ITextFormatter formatter,
+            EventHubProducerClient eventHubClient,
+            bool ownsClient,
+            LogEventLevel restrictedToMinimumLevel,
+            bool writeInBatches,
+            TimeSpan? period,
+            int? batchPostingLimit,
+            bool shouldIncludeProperties)
+        {
+            if (writeInBatches)
+            {
+                var batchSizeLimit = batchPostingLimit.GetValueOrDefault();
+                if (batchSizeLimit <= 0)
+                    batchSizeLimit = DefaultBatchPostingLimit;
+
+                var batchedSink = new AzureEventHubBatchingSink(eventHubClient, formatter, shouldIncludeProperties, ownsClient);
+                var batchingOptions = new BatchingOptions
+                {
+                    BatchSizeLimit = batchSizeLimit,
+                    BufferingTimeLimit = period ?? DefaultPeriod
+                };
+
+                return loggerConfiguration.Sink(batchedSink, batchingOptions, restrictedToMinimumLevel);
+            }
+
+            return loggerConfiguration.Sink(new AzureEventHubSink(eventHubClient, formatter, shouldIncludeProperties, ownsClient), restrictedToMinimumLevel);
         }
     }
 }
