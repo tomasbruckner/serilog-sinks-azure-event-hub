@@ -36,7 +36,7 @@ These pick one of two sink implementations under `Sinks/AzureEventHub/`:
 
 Partition key behavior differs between the two and is intentional: the batching sink assigns one random `Guid` partition key per *batch*; the non-batching sink assigns one per *event*. This is why `writeInBatches` is opt-in rather than the default — it changes event distribution across partitions.
 
-Both sinks do the same per-event transform: render the `LogEvent` through the `ITextFormatter` to a string, UTF-8 encode it as the `EventData` body, and attach two properties — `Type = "SerilogEvent"` and `Level = <level>`.
+Both sinks build their `EventData` through the shared internal `EventDataFactory`: render the `LogEvent` through the `ITextFormatter` to a string, UTF-8 encode it as the `EventData` body, and attach two properties — `Type = "SerilogEvent"` and `Level = <level>`. When the sink is created with `shouldIncludeProperties: true` (opt-in, threaded from the `WriteTo`/`AuditTo` extension parameter), the factory also copies the log event's structured properties onto `EventData.Properties` — scalars by value, other values rendered to a string — without ever overwriting the reserved `Type`/`Level`.
 
 ## Dependencies / SDK note
 

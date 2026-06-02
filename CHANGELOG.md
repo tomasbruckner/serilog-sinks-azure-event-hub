@@ -27,6 +27,10 @@ at version 6.0.x. Everything below is new since the fork.
 - AppVeyor configuration (`appveyor.yml`) and the legacy `CHANGES.md`.
 
 ### Added
+- **`shouldIncludeProperties` option** on `WriteTo`/`AuditTo` (default `false`): emit the log event's
+  structured properties as Event Hub event data properties (scalars keep their type, other values are
+  rendered to a string; the reserved `Type`/`Level` are never overwritten). Addresses the long-standing
+  upstream requests in issues #9 and #31 and PRs #18/#28/#32.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`, .NET SDK 10): builds and tests every push/PR to
   `main`/`dev`; packs, pushes to NuGet, and cuts a GitHub release on pushes to `main`.
 - **Unit tests** (xUnit + Moq) covering both sinks, including event formatting, the `Type`/`Level`

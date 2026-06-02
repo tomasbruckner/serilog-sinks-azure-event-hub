@@ -55,6 +55,7 @@ namespace Serilog
         /// key used for the events so is not enabled by default.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
+        /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
@@ -65,19 +66,20 @@ namespace Serilog
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             bool writeInBatches = false,
             TimeSpan? period = null,
-            int? batchPostingLimit = null
+            int? batchPostingLimit = null,
+            bool shouldIncludeProperties = false
             )
         {
-            if (loggerConfiguration == null) 
+            if (loggerConfiguration == null)
                 throw new ArgumentNullException("loggerConfiguration");
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
-            if (outputTemplate == null) 
+            if (outputTemplate == null)
                 throw new ArgumentNullException("outputTemplate");
 
             var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
 
-            return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel,writeInBatches, period, batchPostingLimit);
+            return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit, shouldIncludeProperties);
         }
 
         /// <summary>
@@ -91,6 +93,7 @@ namespace Serilog
         /// key used for the events so is not enabled by default.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
+        /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
@@ -100,7 +103,8 @@ namespace Serilog
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             bool writeInBatches = false,
             TimeSpan? period = null,
-            int? batchPostingLimit = null)
+            int? batchPostingLimit = null,
+            bool shouldIncludeProperties = false)
         {
             if (loggerConfiguration == null)
                 throw new ArgumentNullException("loggerConfiguration");
@@ -109,7 +113,7 @@ namespace Serilog
 
             if (writeInBatches)
             {
-                var batchedSink = new AzureEventHubBatchingSink(eventHubClient, formatter);
+                var batchedSink = new AzureEventHubBatchingSink(eventHubClient, formatter, shouldIncludeProperties);
                 var batchingOptions = new BatchingOptions
                 {
                     BatchSizeLimit = batchPostingLimit ?? DefaultBatchPostingLimit,
@@ -119,7 +123,7 @@ namespace Serilog
                 return loggerConfiguration.Sink(batchedSink, batchingOptions, restrictedToMinimumLevel);
             }
 
-            return loggerConfiguration.Sink(new AzureEventHubSink(eventHubClient, formatter), restrictedToMinimumLevel);
+            return loggerConfiguration.Sink(new AzureEventHubSink(eventHubClient, formatter, shouldIncludeProperties), restrictedToMinimumLevel);
         }
 
         /// <summary>
@@ -136,6 +140,7 @@ namespace Serilog
         /// key used for the events so is not enabled by default.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
+        /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
@@ -147,7 +152,8 @@ namespace Serilog
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             bool writeInBatches = false,
             TimeSpan? period = null,
-            int? batchPostingLimit = null
+            int? batchPostingLimit = null,
+            bool shouldIncludeProperties = false
             )
         {
             if (loggerConfiguration == null)
@@ -159,7 +165,7 @@ namespace Serilog
 
             var client = new EventHubProducerClient(connectionString, eventHubName);
 
-            return AzureEventHub(loggerConfiguration, client, outputTemplate, formatProvider, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
+            return AzureEventHub(loggerConfiguration, client, outputTemplate, formatProvider, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit, shouldIncludeProperties);
         }
 
         /// <summary>
@@ -174,6 +180,7 @@ namespace Serilog
         /// key used for the events so is not enabled by default.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
+        /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
@@ -184,7 +191,8 @@ namespace Serilog
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             bool writeInBatches = false,
             TimeSpan? period = null,
-            int? batchPostingLimit = null
+            int? batchPostingLimit = null,
+            bool shouldIncludeProperties = false
         )
         {
             if (loggerConfiguration == null)
@@ -196,7 +204,7 @@ namespace Serilog
 
             var client = new EventHubProducerClient(connectionString, eventHubName);
 
-            return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
+            return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit, shouldIncludeProperties);
         }
     }
 }

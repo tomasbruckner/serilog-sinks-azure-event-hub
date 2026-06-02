@@ -11,6 +11,8 @@ Each log event is rendered to text (using a Serilog output template or a custom 
 | `Type` | `SerilogEvent` |
 | `Level` | the event's log level (e.g. `Information`, `Error`) |
 
+Enable `shouldIncludeProperties` to also emit the log event's own structured properties (see [Including log event properties](#including-log-event-properties)).
+
 ## Install
 
 ```shell
@@ -85,6 +87,21 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 ```
 
+## Including log event properties
+
+By default only `Type` and `Level` are attached. Set `shouldIncludeProperties: true` to also add each of the log event's structured properties as an Event Hub application property:
+
+```csharp
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.AzureEventHub(connectionString, "logs", shouldIncludeProperties: true)
+    .CreateLogger();
+
+Log.Information("Order {OrderId} shipped to {Region}", 1234, "EU");
+// EventData.Properties -> Type=SerilogEvent, Level=Information, OrderId=1234, Region=EU
+```
+
+Scalar values are passed through with their original type where Event Hubs supports it; structured/collection values are rendered to a string. The reserved `Type` and `Level` properties are never overwritten by a same-named log event property. The option is available on both `WriteTo` and `AuditTo`.
+
 ## Custom formatting
 
 Provide an output template, or supply any Serilog `ITextFormatter` — for example to emit JSON with [`Serilog.Formatting.Compact`](https://www.nuget.org/packages/Serilog.Formatting.Compact):
@@ -119,6 +136,7 @@ Log.Logger = new LoggerConfiguration()
 | `writeInBatches` | `false` | Buffer and flush events periodically. |
 | `period` | `2s` | Flush interval (batching only). |
 | `batchPostingLimit` | `50` | Max events per flush (batching only). |
+| `shouldIncludeProperties` | `false` | Add the log event's properties as Event Hub event data properties. |
 
 `AuditTo.AzureEventHub(...)` accepts the same parameters except the batching ones (`writeInBatches`, `period`, `batchPostingLimit`).
 

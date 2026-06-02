@@ -41,6 +41,7 @@ namespace Serilog
         /// <param name="outputTemplate">A message template describing the format used to write to the sink.
         /// the default is "{Timestamp} [{Level}] {Message}{NewLine}{Exception}".</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
+        /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
@@ -48,19 +49,20 @@ namespace Serilog
             EventHubProducerClient eventHubClient,
             string outputTemplate = DefaultOutputTemplate,
             IFormatProvider formatProvider = null,
-            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum
+            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+            bool shouldIncludeProperties = false
             )
         {
-            if (loggerConfiguration == null) 
+            if (loggerConfiguration == null)
                 throw new ArgumentNullException("loggerConfiguration");
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
-            if (outputTemplate == null) 
+            if (outputTemplate == null)
                 throw new ArgumentNullException("outputTemplate");
 
             var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
 
-            return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel);
+            return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel, shouldIncludeProperties);
         }
 
         /// <summary>
@@ -70,20 +72,22 @@ namespace Serilog
         /// <param name="formatter">Formatter used to convert log events to text.</param>
         /// <param name="eventHubClient">The Event Hub to use to insert the log entries to.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
+        /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
             this LoggerAuditSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
             EventHubProducerClient eventHubClient,
-            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum)
+            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+            bool shouldIncludeProperties = false)
         {
             if (loggerConfiguration == null)
                 throw new ArgumentNullException("loggerConfiguration");
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
 
-            var sink = new AzureEventHubSink(eventHubClient, formatter);
+            var sink = new AzureEventHubSink(eventHubClient, formatter, shouldIncludeProperties);
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
 
@@ -97,6 +101,7 @@ namespace Serilog
         /// <param name="outputTemplate">A message template describing the format used to write to the sink.
         /// the default is "{Timestamp} [{Level}] {Message}{NewLine}{Exception}".</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
+        /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
@@ -105,7 +110,8 @@ namespace Serilog
             string eventHubName,
             string outputTemplate = DefaultOutputTemplate,
             IFormatProvider formatProvider = null,
-            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum
+            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+            bool shouldIncludeProperties = false
             )
         {
             if (loggerConfiguration == null)
@@ -117,7 +123,7 @@ namespace Serilog
 
             var client = new EventHubProducerClient(connectionString, eventHubName);
 
-            return AzureEventHub(loggerConfiguration, client, outputTemplate, formatProvider, restrictedToMinimumLevel);
+            return AzureEventHub(loggerConfiguration, client, outputTemplate, formatProvider, restrictedToMinimumLevel, shouldIncludeProperties);
         }
 
         /// <summary>
@@ -128,6 +134,7 @@ namespace Serilog
         /// <param name="connectionString">The Event Hub connection string.</param>
         /// <param name="eventHubName">The Event Hub name.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
+        /// <param name="shouldIncludeProperties">Whether to add the log event's properties to the Event Hub event data. Defaults to false.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
@@ -135,7 +142,8 @@ namespace Serilog
             ITextFormatter formatter,
             string connectionString,
             string eventHubName,
-            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum
+            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+            bool shouldIncludeProperties = false
         )
         {
             if (loggerConfiguration == null)
@@ -146,7 +154,7 @@ namespace Serilog
                 throw new ArgumentNullException("eventHubName");
 
             var client = new EventHubProducerClient(connectionString, eventHubName);
-            return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel);
+            return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel, shouldIncludeProperties);
         }
     }
 }

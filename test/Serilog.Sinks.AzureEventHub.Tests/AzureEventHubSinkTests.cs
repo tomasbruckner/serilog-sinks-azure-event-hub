@@ -66,5 +66,64 @@ namespace Serilog.Sinks.AzureEventHub.Tests
             Assert.All(partitionKeys, key => Assert.True(Guid.TryParse(key, out _)));
             Assert.Equal(2, partitionKeys.Distinct().Count());
         }
+
+        [Fact]
+        public void Emit_WithShouldIncludeProperties_IncludesLogEventPropertiesOnEventData()
+        {
+            var client = CaptureClient(out var captured);
+            var sink = new AzureEventHubSink(client, TestLogEvents.Formatter, shouldIncludeProperties: true);
+
+            sink.Emit(TestLogEvents.Create(LogEventLevel.Information, "hi", TestLogEvents.Property("UserId", 42)));
+
+            var eventData = Assert.Single(captured);
+            Assert.Equal(42, eventData.Properties["UserId"]);
+            // reserved properties are still present
+            Assert.Equal("SerilogEvent", eventData.Properties["Type"]);
+            Assert.Equal("Information", eventData.Properties["Level"]);
+        }
+
+        [Fact]
+        public void Emit_ByDefault_DoesNotIncludeLogEventProperties()
+        {
+            var client = CaptureClient(out var captured);
+            var sink = new AzureEventHubSink(client, TestLogEvents.Formatter);
+
+            sink.Emit(TestLogEvents.Create(LogEventLevel.Information, "hi", TestLogEvents.Property("UserId", 42)));
+
+            var eventData = Assert.Single(captured);
+            Assert.False(eventData.Properties.ContainsKey("UserId"));
+        }
+
+        [Fact]
+        public void Emit_WithShouldIncludeProperties_DoesNotOverwriteReservedProperties()
+        {
+            var client = CaptureClient(out var captured);
+            var sink = new AzureEventHubSink(client, TestLogEvents.Formatter, shouldIncludeProperties: true);
+
+            sink.Emit(TestLogEvents.Create(LogEventLevel.Warning, "hi", TestLogEvents.Property("Level", "bogus")));
+
+            var eventData = Assert.Single(captured);
+            // the sink's own Level must win over a same-named log event property
+            Assert.Equal("Warning", eventData.Properties["Level"]);
+        }
+
+        // A mock client whose SendAsync records the events it is given into `captured`.
+        static EventHubProducerClient CaptureClient(out List<EventData> captured)
+        {
+            var sent = new List<EventData>();
+            captured = sent;
+
+            var client = new Mock<EventHubProducerClient>();
+            client
+                .Setup(c => c.SendAsync(
+                    It.IsAny<IEnumerable<EventData>>(),
+                    It.IsAny<SendEventOptions>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback<IEnumerable<EventData>, SendEventOptions, CancellationToken>(
+                    (events, _, _) => sent.AddRange(events));
+
+            return client.Object;
+        }
     }
 }

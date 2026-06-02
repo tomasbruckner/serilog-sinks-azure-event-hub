@@ -58,6 +58,27 @@ namespace Serilog.Sinks.AzureEventHub.IntegrationTests
             Assert.Equal("Warning", received.Properties["Level"]);
         }
 
+        [Fact]
+        public async Task WriteTo_WithShouldIncludeProperties_DeliversLogEventPropertiesToEventHub()
+        {
+            var marker = Guid.NewGuid().ToString("N");
+
+            using (var log = new LoggerConfiguration()
+                       .WriteTo.AzureEventHub(_emulator.ConnectionString, EventHubsEmulatorFixture.EventHubName,
+                           outputTemplate: "{Message}",
+                           shouldIncludeProperties: true)
+                       .CreateLogger())
+            {
+                log.Information("props {Marker} {OrderId}", marker, 123);
+            }
+
+            var received = await ReadEventContainingAsync(marker, TimeSpan.FromSeconds(60));
+
+            Assert.Equal("SerilogEvent", received.Properties["Type"]);
+            Assert.Equal(123, Convert.ToInt32(received.Properties["OrderId"]));
+            Assert.True(received.Properties.ContainsKey("Marker"));
+        }
+
         /// <summary>
         /// Reads the hub from the earliest offset until an event whose body contains
         /// <paramref name="marker"/> is found, so concurrent/leftover events don't cause false matches.

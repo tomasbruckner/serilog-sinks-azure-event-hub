@@ -79,6 +79,27 @@ namespace Serilog.Sinks.AzureEventHub.Tests
             Assert.All(partitionKeys, k => Assert.Equal(partitionKeys[0], k)); // same key for the whole batch
         }
 
+        [Fact]
+        public async Task EmitBatchAsync_WithShouldIncludeProperties_IncludesLogEventPropertiesOnEventData()
+        {
+            var added = new List<EventData>();
+            var client = CreateClient(
+                tryAdd: (store, ev) => { added.Add(ev); return true; },
+                partitionKeys: new List<string>(),
+                onSend: () => { });
+
+            var sink = new AzureEventHubBatchingSink(client.Object, TestLogEvents.Formatter, shouldIncludeProperties: true);
+
+            await sink.EmitBatchAsync(new[]
+            {
+                TestLogEvents.Create(LogEventLevel.Information, "hi", TestLogEvents.Property("OrderId", 7))
+            });
+
+            var eventData = Assert.Single(added);
+            Assert.Equal(7, eventData.Properties["OrderId"]);
+            Assert.Equal("SerilogEvent", eventData.Properties["Type"]);
+        }
+
         /// <summary>
         /// Builds a mocked <see cref="EventHubProducerClient"/> whose CreateBatchAsync returns a
         /// fresh model-factory batch (with its own backing store) on every call, and whose

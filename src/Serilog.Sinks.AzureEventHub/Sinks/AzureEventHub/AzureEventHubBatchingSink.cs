@@ -14,8 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
@@ -34,18 +32,22 @@ namespace Serilog.Sinks.AzureEventHub
     {
         readonly EventHubProducerClient _eventHubClient;
         readonly ITextFormatter _formatter;
+        readonly bool _shouldIncludeProperties;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
+        /// <param name="shouldIncludeProperties">Whether the log event's properties are added to the EventData.</param>
         public AzureEventHubBatchingSink(
             EventHubProducerClient eventHubClient,
-            ITextFormatter formatter)
+            ITextFormatter formatter,
+            bool shouldIncludeProperties = false)
         {
             _eventHubClient = eventHubClient;
             _formatter = formatter;
+            _shouldIncludeProperties = shouldIncludeProperties;
         }
 
         /// <summary>
@@ -103,19 +105,7 @@ namespace Serilog.Sinks.AzureEventHub
         /// </summary>
         public Task OnEmptyBatchAsync() => Task.CompletedTask;
 
-        EventData CreateEventData(LogEvent logEvent)
-        {
-            byte[] body;
-            using (var render = new StringWriter())
-            {
-                _formatter.Format(logEvent, render);
-                body = Encoding.UTF8.GetBytes(render.ToString());
-            }
-
-            var eventData = new EventData(body);
-            eventData.Properties.Add("Type", "SerilogEvent");
-            eventData.Properties.Add("Level", logEvent.Level.ToString());
-            return eventData;
-        }
+        EventData CreateEventData(LogEvent logEvent) =>
+            EventDataFactory.CreateEventData(logEvent, _formatter, _shouldIncludeProperties);
     }
 }

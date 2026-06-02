@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 using Serilog.Parsing;
@@ -21,12 +20,15 @@ namespace Serilog.Sinks.AzureEventHub.Tests
         public static MessageTemplateTextFormatter Formatter { get; } =
             new MessageTemplateTextFormatter("{Level}|{Message}", null);
 
-        public static LogEvent Create(LogEventLevel level, string message) =>
+        public static LogEvent Create(LogEventLevel level, string message, params LogEventProperty[] properties) =>
             new LogEvent(
                 DateTimeOffset.UtcNow,
                 level,
                 exception: null,
                 Parser.Parse(message),
-                Enumerable.Empty<LogEventProperty>());
+                properties);
+
+        public static LogEventProperty Property(string name, object value) =>
+            new LogEventProperty(name, new ScalarValue(value));
     }
 }
