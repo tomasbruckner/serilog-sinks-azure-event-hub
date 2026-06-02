@@ -1,16 +1,17 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Legacy nuspec. `dotnet pack` builds from the csproj metadata, not this file;
+     it is kept in sync only to avoid confusion. -->
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>Serilog.Sinks.AzureEventHub</id>
+    <id>TomasBruckner.Serilog.Sinks.AzureEventHub</id>
     <version>$version$</version>
-    <authors>Ben Gale</authors>
+    <authors>Tomas Bruckner</authors>
     <description>Serilog event sink that writes to Azure Event Hubs.</description>
     <language>en-US</language>
-    <projectUrl>http://serilog.net</projectUrl>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageIconUrl>http://serilog.net/images/serilog-sink-nuget.png</PackageIconUrl>
-    <repository type="git" url="https://github.com/serilog/serilog-sinks-azureeventhub" />
-    <tags>serilog logging azure</tags>
+    <projectUrl>https://github.com/tomasbruckner/serilog-sinks-azure-event-hub</projectUrl>
+    <license type="expression">MIT</license>
+    <repository type="git" url="https://github.com/tomasbruckner/serilog-sinks-azure-event-hub" />
+    <tags>serilog logging azure eventhub</tags>
     <dependencies>
       <dependency id="Serilog" version="4.*" />
       <dependency id="Azure.Messaging.EventHubs" version="5.*" />

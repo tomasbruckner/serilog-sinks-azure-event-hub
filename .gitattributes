@@ -1,3 +1,36 @@
-# Auto detect text files and perform LF normalization
-
+# Normalize line endings: store as LF in the repo, check out native.
 * text=auto
+
+# Source and config files (explicit, for clarity)
+*.cs        text diff=csharp
+*.csproj    text
+*.props     text
+*.targets   text
+*.slnx      text
+*.sln       text eol=crlf
+*.json      text
+*.yml       text
+*.yaml      text
+*.md        text
+*.xml       text
+*.config    text
+*.nuspec    text
+
+# Windows-only scripts keep CRLF
+*.ps1       text eol=crlf
+*.cmd       text eol=crlf
+*.bat       text eol=crlf
+
+# Unix shell scripts keep LF
+*.sh        text eol=lf
+
+# Binary files (never normalize, never diff)
+*.snk       binary
+*.png       binary
+*.jpg       binary
+*.gif       binary
+*.ico       binary
+*.dll       binary
+*.pfx       binary
+*.nupkg     binary
+*.snupkg    binary

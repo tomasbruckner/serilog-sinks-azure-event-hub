@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A [Serilog](https://serilog.net) sink that writes log events to Azure Event Hubs. The library lives in `src/Serilog.Sinks.AzureEventHub` and is published as the `Serilog.Sinks.AzureEventHub` NuGet package. Tests live in `test/`: `Serilog.Sinks.AzureEventHub.Tests` (fast unit tests) and `Serilog.Sinks.AzureEventHub.IntegrationTests` (round-trip against the Event Hubs emulator).
+A [Serilog](https://serilog.net) sink that writes log events to Azure Event Hubs. The library lives in `src/Serilog.Sinks.AzureEventHub` and is published as the `TomasBruckner.Serilog.Sinks.AzureEventHub` NuGet package (the assembly and the `Serilog` namespace stay `Serilog.Sinks.AzureEventHub` — only the package id is fork-specific). This is a community fork licensed under **MIT**; upstream-derived code remains under Apache-2.0 (see `THIRD-PARTY-NOTICES.md`). Tests live in `test/`: `Serilog.Sinks.AzureEventHub.Tests` (fast unit tests) and `Serilog.Sinks.AzureEventHub.IntegrationTests` (round-trip against the Event Hubs emulator).
 
 ## Build & test
 
@@ -21,6 +21,8 @@ dotnet test .\test\Serilog.Sinks.AzureEventHub.Tests\Serilog.Sinks.AzureEventHub
 - The library is strong-named with `assets/Serilog.snk` (`SignAssembly`). Don't remove signing. Test projects are unsigned and reference the library via `ProjectReference`, testing only its public API.
 - Single library target: `netstandard2.0` (consumable from modern .NET *and* .NET Framework 4.6.1+/4.8) — this is the consumer-facing floor and is independent of the SDK 10 *build* floor above. Default C# language version for this TFM is 7.3 — avoid C# 8+ syntax (`using` declarations, switch expressions) in the library unless you set `<LangVersion>`. Test projects set `<LangVersion>latest</LangVersion>`.
 - Unit tests mock `EventHubProducerClient` with Moq; the batching tests build a real `EventDataBatch` via `EventHubsModelFactory.EventDataBatch(...)` so the `CreateBatchAsync`/`TryAdd`/overflow path is exercised without Docker. Integration tests log through the sink into the emulator and read the event back via `EventHubConsumerClient`.
+- **Package versions are managed centrally** in `Directory.Packages.props` (Central Package Management) — add or bump a dependency version there, not in individual `.csproj` files (`PackageReference` carries no `Version`). Shared test settings (`net10.0`, `LangVersion=latest`, `IsPackable=false`, `SignAssembly=false`) live in `test/Directory.Build.props`. The SDK floor is pinned by `global.json` (`10.0.100`, `rollForward: latestMinor`).
+- The library ships **Source Link** metadata and a `snupkg` symbol package, and packs `README.md` into the nupkg (`PackageReadmeFile`). `Microsoft.SourceLink.GitHub` is a build-time-only dependency (`PrivateAssets="All"`).
 
 ## Architecture
 

@@ -20,6 +20,10 @@ at version 6.0.x. Everything below is new since the fork.
 - **Target framework narrowed to `netstandard2.0` only.** Still consumable from modern .NET (8/10) and
   .NET Framework 4.6.1+/4.8.
 - Package version bumped to **7.0.0** (requires Serilog 4 — a breaking change for consumers).
+- **Relicensed this fork to the MIT License.** Upstream-derived code remains under Apache-2.0;
+  attribution and a full copy of that license are retained in `THIRD-PARTY-NOTICES.md`.
+- **Renamed the NuGet package to `TomasBruckner.Serilog.Sinks.AzureEventHub`.** The assembly and the
+  `Serilog` namespace are unchanged, so existing code keeps compiling — only the package id differs.
 
 ### Removed
 - `net461` target framework (out of support).
@@ -39,3 +43,8 @@ at version 6.0.x. Everything below is new since the fork.
   emulator and read it back.
 - Migrated the solution to the **`.slnx`** format; test projects target `net10.0`.
 - Project documentation: `README.md` and `CLAUDE.md`.
+- **Source Link + `snupkg` symbol package**, and the `README.md` is now packed into the NuGet package.
+- **Central Package Management** (`Directory.Packages.props`) and a `global.json` pinning the .NET 10 SDK
+  floor; shared test settings moved to `test/Directory.Build.props`.
+- **Community health files**: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CODEOWNERS`,
+  issue/PR templates, plus `.editorconfig`, `.gitattributes`, and Dependabot configuration.
