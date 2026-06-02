@@ -1,6 +1,8 @@
 # Serilog.Sinks.AzureEventHub
 
 [![CI](https://github.com/tomasbruckner/serilog-sinks-azure-event-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/tomasbruckner/serilog-sinks-azure-event-hub/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/v/TomasBruckner.Serilog.Sinks.AzureEventHub.svg)](https://www.nuget.org/packages/TomasBruckner.Serilog.Sinks.AzureEventHub/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A [Serilog](https://serilog.net) sink that writes log events to [Azure Event Hubs](https://learn.microsoft.com/azure/event-hubs/).
 
@@ -16,7 +18,7 @@ Enable `shouldIncludeProperties` to also emit the log event's own structured pro
 ## Install
 
 ```shell
-dotnet add package Serilog.Sinks.AzureEventHub
+dotnet add package TomasBruckner.Serilog.Sinks.AzureEventHub
 ```
 
 Built against **Serilog 4** and the modern **`Azure.Messaging.EventHubs`** SDK. The package targets `netstandard2.0`, so it can be consumed from modern .NET (8/10) as well as .NET Framework 4.6.1+/4.8.
@@ -157,4 +159,10 @@ dotnet test ./test/Serilog.Sinks.AzureEventHub.Tests/Serilog.Sinks.AzureEventHub
 
 ## License
 
-Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+Licensed under the [MIT License](LICENSE).
+
+This is a community fork of [`serilog-contrib/serilog-sinks-azureeventhub`](https://github.com/serilog-contrib/serilog-sinks-azureeventhub),
+which is licensed under Apache-2.0. Upstream-derived portions remain under
+Apache-2.0; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution
+and a full copy of that license. The assembly and `Serilog` namespace remain
+`Serilog.Sinks.AzureEventHub`; only the NuGet package id differs.

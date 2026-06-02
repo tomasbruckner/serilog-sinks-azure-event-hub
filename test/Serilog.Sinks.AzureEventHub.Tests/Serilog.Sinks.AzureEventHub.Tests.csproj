@@ -1,17 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <IsPackable>false</IsPackable>
-    <SignAssembly>false</SignAssembly>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
+  <!-- TargetFramework / LangVersion / IsPackable / SignAssembly come from
+       ../Directory.Build.props. Package versions come from
+       ../../Directory.Packages.props (Central Package Management). -->
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
-    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Moq" />
   </ItemGroup>
 
   <ItemGroup>

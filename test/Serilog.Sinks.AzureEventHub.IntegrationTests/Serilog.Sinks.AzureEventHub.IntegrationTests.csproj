@@ -1,18 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <IsPackable>false</IsPackable>
-    <SignAssembly>false</SignAssembly>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
+  <!-- TargetFramework / LangVersion / IsPackable / SignAssembly come from
+       ../Directory.Build.props. Package versions come from
+       ../../Directory.Packages.props (Central Package Management). -->
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="Testcontainers.EventHubs" Version="4.12.0" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
-    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.12.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Testcontainers.EventHubs" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Azure.Messaging.EventHubs" />
   </ItemGroup>
 
   <ItemGroup>
