@@ -8,7 +8,7 @@ This fork diverged from
 [`serilog-contrib/serilog-sinks-azureeventhub`](https://github.com/serilog-contrib/serilog-sinks-azureeventhub)
 at version 6.0.x. Everything below is new since the fork.
 
-## [7.0.0] - Unreleased
+## [7.0.0] - 2026-06-02
 
 ### Changed
 - **Serilog 2.5 → 4.x.** Batching now uses Serilog 4 core's `IBatchedLogEventSink`; the
@@ -20,6 +20,11 @@ at version 6.0.x. Everything below is new since the fork.
 - **Target framework narrowed to `netstandard2.0` only.** Still consumable from modern .NET (8/10) and
   .NET Framework 4.6.1+/4.8.
 - Package version bumped to **7.0.0** (requires Serilog 4 — a breaking change for consumers).
+- **Argument validation.** An empty or whitespace `connectionString`/`eventHubName` now throws
+  `ArgumentException` (a `null` value still throws `ArgumentNullException`), and a custom
+  `ITextFormatter` is validated up front instead of failing later on the first event.
+- A non-positive `batchPostingLimit` now falls back to the default batch size instead of producing
+  an invalid batching configuration.
 - **Relicensed this fork to the MIT License.** Upstream-derived code remains under Apache-2.0;
   attribution and a full copy of that license are retained in `THIRD-PARTY-NOTICES.md`.
 - **Renamed the NuGet package to `TomasBruckner.Serilog.Sinks.AzureEventHub`.** The assembly and the
@@ -32,9 +37,13 @@ at version 6.0.x. Everything below is new since the fork.
 
 ### Added
 - **`shouldIncludeProperties` option** on `WriteTo`/`AuditTo` (default `false`): emit the log event's
-  structured properties as Event Hub event data properties (scalars keep their type, other values are
-  rendered to a string; the reserved `Type`/`Level` are never overwritten). Addresses the long-standing
-  upstream requests in issues #9 and #31 and PRs #18/#28/#32.
+  structured properties as Event Hub event data properties (a scalar keeps its type when Event Hubs can
+  serialize it; otherwise — e.g. enums — and for all structured/collection values it is rendered to an
+  invariant-culture string, so the send never fails on a property; the reserved `Type`/`Level` are never
+  overwritten). Addresses the long-standing upstream requests in issues #9 and #31 and PRs #18/#28/#32.
+- **Sinks implement `IDisposable`.** When the sink is configured from a connection string the library
+  owns the underlying `EventHubProducerClient` and disposes it when the logger is disposed
+  (`Log.CloseAndFlush()`); a caller-supplied client is left for the caller to dispose.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`, .NET SDK 10): builds and tests every push/PR to
   `main`/`dev`; packs, pushes to NuGet, and cuts a GitHub release on pushes to `main`.
 - **Unit tests** (xUnit + Moq) covering both sinks, including event formatting, the `Type`/`Level`
